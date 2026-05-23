@@ -1,5 +1,15 @@
 {
-  "buildCommand": "npx vite build",
-  "outputDirectory": "dist",
-  "framework": null
+  "buildCommand": "bun run build",
+  "outputDirectory": ".output/public",
+  "installCommand": "bun install",
+  "framework": null,
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
