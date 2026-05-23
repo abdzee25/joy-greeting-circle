@@ -1,6 +1,6 @@
 {
   "buildCommand": "bun run build",
-  "outputDirectory": ".output/public",
+  "outputDirectory": ".output",
   "installCommand": "bun install",
   "framework": null,
   "routes": [
