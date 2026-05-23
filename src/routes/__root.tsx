@@ -75,14 +75,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "HealthGuard AI" },
+      { name: "description", content: "AI Health Assistant | SDG 3 | Vision 2030" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "HealthGuard AI" },
+      { property: "og:description", content: "AI Health Assistant | SDG 3 | Vision 2030" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "HealthGuard AI" },
+      { name: "twitter:description", content: "AI Health Assistant | SDG 3 | Vision 2030" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2c933437-8baa-46d8-8483-4915fa117d93/id-preview-9a54e316--f340c322-6ead-4c9c-adcc-5bd173f38ec7.lovable.app-1779543700916.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2c933437-8baa-46d8-8483-4915fa117d93/id-preview-9a54e316--f340c322-6ead-4c9c-adcc-5bd173f38ec7.lovable.app-1779543700916.png" },
     ],
     links: [
       {
