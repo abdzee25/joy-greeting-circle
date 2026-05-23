@@ -8,26 +8,42 @@ const InputSchema = z.object({
   ageGroup: z.string().max(20).optional(),
 });
 
+async function fetchCSV(filename: string): Promise<string> {
+  const baseUrl = "https://raw.githubusercontent.com/abdzee25/joy-greeting-circle/main/public";
+  const res = await fetch(`${baseUrl}/${filename}`);
+  if (!res.ok) return "";
+  return res.text();
+}
+
+function parseCSV(csv: string): Record<string, string>[] {
+  const lines = csv.trim().split("\n");
+  const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ""));
+  return lines.slice(1).map(line => {
+    const values = line.split(",").map(v => v.trim().replace(/"/g, ""));
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => obj[h] = values[i] || "");
+    return obj;
+  });
+}
+
+function findDisease(rows: Record<string, string>[], disease: string) {
+  return rows.find(r => 
+    Object.values(r)[0]?.toLowerCase().includes(disease.toLowerCase())
+  );
+}
+
 const tool = {
   type: "function",
   function: {
     name: "diagnose",
-    description: "Return a structured preliminary health assessment based on the user's symptoms.",
+    description: "Return the most likely disease name based on symptoms.",
     parameters: {
       type: "object",
       properties: {
         disease: { type: "string", description: "Most likely condition name" },
-        description: { type: "string", description: "Brief 1-2 sentence explanation of the condition" },
         severity: { type: "string", enum: ["low", "medium", "high"] },
-        precautions: {
-          type: "array",
-          items: { type: "string" },
-          minItems: 4,
-          maxItems: 4,
-          description: "Exactly 4 actionable precautions",
-        },
       },
-      required: ["disease", "description", "severity", "precautions"],
+      required: ["disease", "severity"],
       additionalProperties: false,
     },
   },
@@ -37,7 +53,7 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    if (!apiKey) throw new Error("API key not configured");
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -46,12 +62,11 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-preview",
         messages: [
           {
             role: "system",
-            content:
-              "You are HealthGuard AI, a friendly and professional health assistant aligned with SDG 3 and Pakistan Vision 2030. If the user greets you or asks general questions, respond warmly and naturally like a helpful doctor would. If the user describes symptoms, always respond by calling the diagnose tool with disease, description, severity and 4 precautions. Be empathetic, concise and clinically grounded. Severity: 'low' for self-care issues, 'medium' for symptoms warranting a clinic visit within days, 'high' for symptoms requiring urgent/emergency care.",
+            content: "You are HealthGuard AI. Identify the most likely disease from symptoms and call the diagnose tool.",
           },
           { role: "user", content: `Symptoms: ${data.symptoms}` },
         ],
@@ -60,22 +75,38 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
       }),
     });
 
-    if (res.status === 429) throw new Error("Too many requests. Please wait a moment.");
-    if (res.status === 402) throw new Error("AI credits exhausted. Please top up your workspace.");
-    if (!res.ok) {
-      const t = await res.text();
-      console.error("AI gateway error", res.status, t);
-      throw new Error("AI service unavailable");
-    }
+    if (!res.ok) throw new Error("AI service unavailable");
 
     const json = await res.json();
     const call = json.choices?.[0]?.message?.tool_calls?.[0];
     if (!call?.function?.arguments) throw new Error("Invalid AI response");
-    const parsed = JSON.parse(call.function.arguments) as {
+    
+    const aiResult = JSON.parse(call.function.arguments) as {
       disease: string;
-      description: string;
       severity: "low" | "medium" | "high";
-      precautions: string[];
+    };
+
+    // Now fetch from YOUR CSV dataset!
+    const [descRows, precRows] = await Promise.all([
+      fetchCSV("symptom_Description.csv").then(parseCSV),
+      fetchCSV("symptom_precaution.csv").then(parseCSV),
+    ]);
+
+    const descRow = findDisease(descRows, aiResult.disease);
+    const precRow = findDisease(precRows, aiResult.disease);
+
+    const description = descRow?.Description || 
+      `${aiResult.disease} is a medical condition identified based on your symptoms.`;
+
+    const precautions = precRow 
+      ? [precRow.Precaution_1, precRow.Precaution_2, precRow.Precaution_3, precRow.Precaution_4].filter(Boolean)
+      : ["Consult a doctor", "Rest and stay hydrated", "Monitor your symptoms", "Seek medical attention if symptoms worsen"];
+
+    const parsed = {
+      disease: aiResult.disease,
+      description,
+      severity: aiResult.severity,
+      precautions,
     };
 
     const { error } = await supabaseAdmin.from("diagnoses").insert({
