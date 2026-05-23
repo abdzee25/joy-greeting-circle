@@ -66,7 +66,7 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
         messages: [
           {
             role: "system",
-            content: "You are HealthGuard AI. Identify the most likely disease from symptoms and call the diagnose tool.",
+            content: "You are HealthGuard AI. Identify the most likely disease from symptoms. You MUST return ONE specific disease name from this exact list: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins. Call the diagnose tool with the exact disease name.",,
           },
           { role: "user", content: `Symptoms: ${data.symptoms}` },
         ],
