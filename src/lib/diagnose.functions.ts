@@ -37,7 +37,7 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
     const apiKey = process.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
+    if (!apiKey) throw new Error("Gemini API key not configured");
 
     const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
