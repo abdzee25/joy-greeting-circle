@@ -11,18 +11,16 @@ const InputSchema = z.object({
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = "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";
+    const apiKey = "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";
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://joy-greeting-circle.lovable.app",
-        "X-Title": "HealthGuard AI",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: "llama3-8b-8192",
         messages: [
           {
             role: "system",
@@ -38,12 +36,13 @@ No other text outside the JSON.`,
           },
           { role: "user", content: `Symptoms: ${data.symptoms}` },
         ],
+        temperature: 0.1,
       }),
     });
 
     if (!res.ok) {
       const t = await res.text();
-      console.error("OpenRouter error", res.status, t);
+      console.error("Groq error", res.status, t);
       throw new Error("AI service unavailable");
     }
 
