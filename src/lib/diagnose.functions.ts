@@ -8,54 +8,6 @@ const InputSchema = z.object({
   ageGroup: z.string().max(20).optional(),
 });
 
-async function getDatasetInfo(disease: string) {
-  try {
-    const base = "https://raw.githubusercontent.com/abdzee25/joy-greeting-circle/main/public";
-    
-    const [descRes, precRes] = await Promise.all([
-      fetch(`${base}/symptom_Description.csv`),
-      fetch(`${base}/symptom_precaution.csv`),
-    ]);
-
-    const [descText, precText] = await Promise.all([
-      descRes.text(),
-      precRes.text(),
-    ]);
-
-    const findRow = (csv: string, disease: string) => {
-      const lines = csv.trim().split("\n");
-      return lines.find(line => 
-        line.toLowerCase().includes(disease.toLowerCase())
-      );
-    };
-
-    const descRow = findRow(descText, disease);
-    const precRow = findRow(precText, disease);
-
-    let description = null;
-    let precautions = null;
-
-    if (descRow) {
-      const parts = descRow.split(",");
-      description = parts.slice(1).join(",").replace(/"/g, "").trim();
-    }
-
-    if (precRow) {
-      const parts = precRow.split(",");
-      precautions = [
-        parts[1]?.replace(/"/g, "").trim(),
-        parts[2]?.replace(/"/g, "").trim(),
-        parts[3]?.replace(/"/g, "").trim(),
-        parts[4]?.replace(/"/g, "").trim(),
-      ].filter(Boolean);
-    }
-
-    return { description, precautions };
-  } catch (e) {
-    return { description: null, precautions: null };
-  }
-}
-
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
@@ -74,39 +26,37 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
         messages: [
           {
             role: "system",
-            content: `You are HealthGuard AI aligned with SDG 3 and Pakistan Vision 2030. 
-Respond with ONLY a JSON object:
+            content: `You are HealthGuard AI, a health assistant aligned with SDG 3 and Pakistan Vision 2030. 
+Analyze symptoms and respond with ONLY a valid JSON object:
 {
-  "disease": "one disease from: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins",
-  "severity": "low or medium or high"
+  "disease": "exact disease name from: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins",
+  "description": "2 sentence medical description",
+  "severity": "low or medium or high",
+  "precautions": ["precaution 1", "precaution 2", "precaution 3", "precaution 4"]
 }
-No other text.`,
+No other text outside the JSON.`,
           },
           { role: "user", content: `Symptoms: ${data.symptoms}` },
         ],
       }),
     });
 
-    if (!res.ok) throw new Error("AI service unavailable");
+    if (!res.ok) {
+      const t = await res.text();
+      console.error("OpenRouter error", res.status, t);
+      throw new Error("AI service unavailable");
+    }
 
     const json = await res.json();
     const text = json.choices?.[0]?.message?.content;
     if (!text) throw new Error("Invalid AI response");
 
     const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
-    const aiResult = JSON.parse(cleanText) as {
+    const parsed = JSON.parse(cleanText) as {
       disease: string;
+      description: string;
       severity: "low" | "medium" | "high";
-    };
-
-    // Get data from YOUR dataset!
-    const { description: csvDesc, precautions: csvPrec } = await getDatasetInfo(aiResult.disease);
-
-    const parsed = {
-      disease: aiResult.disease,
-      description: csvDesc || `${aiResult.disease} is a medical condition identified based on your reported symptoms. Please consult a healthcare professional for proper diagnosis.`,
-      severity: aiResult.severity,
-      precautions: csvPrec || ["Consult a qualified doctor immediately", "Rest and stay hydrated", "Monitor your symptoms closely", "Avoid self-medication"],
+      precautions: string[];
     };
 
     const { error } = await supabaseAdmin.from("diagnoses").insert({
