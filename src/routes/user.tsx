@@ -1,9 +1,8 @@
+
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Send, Loader2, AlertTriangle, ShieldCheck, MessageSquare } from "lucide-react";
-import { diagnoseSymptoms } from "@/lib/diagnose.functions";
 
 export const Route = createFileRoute("/user")({
   head: () => ({
@@ -21,6 +20,7 @@ type Diagnosis = {
   severity: "low" | "medium" | "high";
   precautions: string[];
 };
+
 type ChatItem =
   | { id: string; role: "user"; text: string }
   | { id: string; role: "ai"; data: Diagnosis };
@@ -35,9 +35,47 @@ function genId() {
   return Math.random().toString(36).slice(2);
 }
 
+async function callGroqAPI(symptoms: string): Promise<Diagnosis> {
+  const apiKey = "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";
+  
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "llama3-8b-8192",
+      messages: [
+        {
+          role: "system",
+          content: `You are HealthGuard AI aligned with SDG 3 and Pakistan Vision 2030. 
+Analyze symptoms and respond with ONLY a valid JSON object:
+{
+  "disease": "exact disease name from: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins",
+  "description": "2 sentence medical description",
+  "severity": "low or medium or high",
+  "precautions": ["precaution 1", "precaution 2", "precaution 3", "precaution 4"]
+}
+No other text outside the JSON.`,
+        },
+        { role: "user", content: `Symptoms: ${symptoms}` },
+      ],
+      temperature: 0.1,
+    }),
+  });
+
+  if (!res.ok) throw new Error("AI service unavailable");
+
+  const json = await res.json();
+  const text = json.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Invalid AI response");
+
+  const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
+  return JSON.parse(cleanText) as Diagnosis;
+}
+
 function UserDashboard() {
-  const diagnose = useServerFn(diagnoseSymptoms);
-  const [sessionId] = useState(() => genId());
   const [history, setHistory] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -58,7 +96,7 @@ function UserDashboard() {
     setInput("");
     setLoading(true);
     try {
-      const data = await diagnose({ data: { sessionId, symptoms: text } });
+      const data = await callGroqAPI(text);
       setHistory((h) => [...h, { id: genId(), role: "ai", data }]);
       toast.success("Assessment ready");
     } catch (err) {
@@ -108,9 +146,7 @@ function UserDashboard() {
                       </p>
                       <h3 className="text-lg font-bold text-foreground mt-0.5">{m.data.disease}</h3>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold capitalize ${severityStyles[m.data.severity]}`}
-                    >
+                    <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold capitalize ${severityStyles[m.data.severity]}`}>
                       {m.data.severity} severity
                     </span>
                   </div>
@@ -121,10 +157,7 @@ function UserDashboard() {
                     </p>
                     <ul className="grid sm:grid-cols-2 gap-2">
                       {m.data.precautions.map((p, i) => (
-                        <li
-                          key={i}
-                          className="flex items-start gap-2 rounded-lg bg-background border border-border px-3 py-2 text-sm"
-                        >
+                        <li key={i} className="flex items-start gap-2 rounded-lg bg-background border border-border px-3 py-2 text-sm">
                           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
                             {i + 1}
                           </span>
