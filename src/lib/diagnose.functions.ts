@@ -11,7 +11,7 @@ const InputSchema = z.object({
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.VITE_GEMINI_API_KEY || "AIzaSyACO4-VlYAF4P9yCajs2OLtcHFP3VZ9hGc";
+    const apiKey = process.env.VITE_GEMINI_API_KEY || "AIzaSyCzRk5vwV88Y6EPxeVo8_KXq1SH42Ea8w8";
 
     const prompt = `You are HealthGuard AI. Analyze these symptoms: "${data.symptoms}"
     
