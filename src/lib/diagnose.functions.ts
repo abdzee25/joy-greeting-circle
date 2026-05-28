@@ -11,46 +11,48 @@ const InputSchema = z.object({
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.VITE_GEMINI_API_KEY || "AIzaSyCzRk5vwV88Y6EPxeVo8_KXq1SH42Ea8w8";
+    const apiKey = "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";
 
-    const prompt = `You are HealthGuard AI. Analyze these symptoms: "${data.symptoms}"
-    
-Respond with ONLY a JSON object in this exact format (no other text):
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://joy-greeting-circle.lovable.app",
+        "X-Title": "HealthGuard AI",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          {
+            role: "system",
+            content: `You are HealthGuard AI, a health assistant aligned with SDG 3 and Pakistan Vision 2030. 
+Analyze symptoms and respond with ONLY a valid JSON object in this exact format:
 {
-  "disease": "disease name from this list only: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins",
-  "description": "brief 2 sentence description",
-  "severity": "low or medium or high",
+  "disease": "exact disease name from: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins",
+  "description": "2 sentence medical description",
+  "severity": "low",
   "precautions": ["precaution 1", "precaution 2", "precaution 3", "precaution 4"]
-}`;
-
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
+}
+severity must be exactly: low, medium, or high. No other text outside the JSON.`,
           },
-        }),
-      }
-    );
+          { role: "user", content: `Symptoms: ${data.symptoms}` },
+        ],
+      }),
+    });
 
     if (!res.ok) {
       const t = await res.text();
-      console.error("Gemini API error", res.status, t);
+      console.error("OpenRouter error", res.status, t);
       throw new Error("AI service unavailable");
     }
 
     const json = await res.json();
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = json.choices?.[0]?.message?.content;
     if (!text) throw new Error("Invalid AI response");
-    
-    const parsed = JSON.parse(text) as {
+
+    const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(cleanText) as {
       disease: string;
       description: string;
       severity: "low" | "medium" | "high";
