@@ -9,16 +9,15 @@ const InputSchema = z.object({
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured");
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const apiKey = "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";
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -39,9 +38,9 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
     });
     if (!res.ok) {
       const t = await res.text();
-      console.error("Lovable AI error", res.status, t);
+      console.error("OpenRouter error", res.status, t);
       if (res.status === 429) throw new Error("Rate limit exceeded. Please try again shortly.");
-      if (res.status === 402) throw new Error("AI credits exhausted. Please add credits in workspace settings.");
+      if (res.status === 402) throw new Error("AI credits exhausted. Please add credits to your OpenRouter account.");
       throw new Error(`AI error: ${res.status}`);
     }
     const json = await res.json();
