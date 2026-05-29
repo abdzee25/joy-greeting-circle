@@ -1,13 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
 const InputSchema = z.object({
   sessionId: z.string().min(1).max(64),
   symptoms: z.string().min(3).max(2000),
   ageGroup: z.string().max(20).optional(),
 });
-
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
@@ -21,7 +19,7 @@ export const diagnoseSymptoms = createServerFn({ method: "POST" })
         "X-Title": "HealthGuard AI",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -39,17 +37,14 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
         ],
       }),
     });
-
     if (!res.ok) {
       const t = await res.text();
       console.error("OpenRouter error", res.status, t);
       throw new Error("AI service unavailable");
     }
-
     const json = await res.json();
     const text = json.choices?.[0]?.message?.content;
     if (!text) throw new Error("Invalid AI response");
-
     const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
     const parsed = JSON.parse(cleanText) as {
       disease: string;
@@ -57,7 +52,6 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
       severity: "low" | "medium" | "high";
       precautions: string[];
     };
-
     const { error } = await supabaseAdmin.from("diagnoses").insert({
       session_id: data.sessionId,
       symptoms: data.symptoms,
@@ -67,8 +61,6 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
       precautions: parsed.precautions,
       age_group: data.ageGroup ?? null,
     });
-
     if (error) console.error("Insert diagnosis error:", error);
-
     return parsed;
   });
