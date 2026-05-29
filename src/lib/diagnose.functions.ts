@@ -11,8 +11,7 @@ const InputSchema = z.object({
 export const diagnoseSymptoms = createServerFn({ method: "POST" })
   .inputValidator((d) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = "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";
-
+    const apiKey = "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";
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -68,6 +67,7 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
       precautions: parsed.precautions,
       age_group: data.ageGroup ?? null,
     });
+
     if (error) console.error("Insert diagnosis error:", error);
 
     return parsed;
