@@ -40,7 +40,7 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
     if (!res.ok) {
       const t = await res.text();
       console.error("OpenRouter error", res.status, t);
-      throw new Error("AI service unavailable");
+      throw new Error(`AI error: ${res.status} - ${t}`);
     }
     const json = await res.json();
     const text = json.choices?.[0]?.message?.content;
