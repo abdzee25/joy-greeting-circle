@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Send, Loader2, AlertTriangle, ShieldCheck, MessageSquare } from "lucide-react";
+import { diagnoseSymptoms } from "@/lib/diagnose.functions";
 
 export const Route = createFileRoute("/user")({
   head: () => ({
@@ -34,67 +36,8 @@ function genId() {
   return Math.random().toString(36).slice(2);
 }
 
-async function diagnoseWithGemini(symptoms: string): Promise<Diagnosis> {
-  const GEMINI_API_KEY = "AIzaSyCzRk5vwV88Y6EPxeVo8_KXq1SH42Ea8w8";
-  const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  const prompt = `You are HealthGuard AI, a professional health assistant aligned with SDG 3 (Good Health) and Pakistan Vision 2030.
-
-A patient reports these symptoms: "${symptoms}"
-
-You MUST respond with ONLY a JSON object — no markdown, no explanation, no extra text. Just the raw JSON:
-
-{
-  "disease": "pick ONE disease name EXACTLY from this list: AIDS, Acne, Allergy, Arthritis, Bronchial Asthma, Chicken pox, Common Cold, Dengue, Diabetes, Drug Reaction, Fungal infection, GERD, Gastroenteritis, Heart attack, Hepatitis B, Hepatitis C, Hepatitis D, Hepatitis E, Hypertension, Hyperthyroidism, Hypoglycemia, Hypothyroidism, Impetigo, Jaundice, Malaria, Migraine, Osteoarthritis, Paralysis (brain hemorrhage), Peptic ulcer disease, Pneumonia, Psoriasis, Tuberculosis, Typhoid, Urinary tract infection, Varicose veins",
-  "description": "Write 2 clear sentences describing this disease and why these symptoms suggest it",
-  "severity": "low",
-  "precautions": ["specific precaution 1", "specific precaution 2", "specific precaution 3", "specific precaution 4"]
-}
-
-Rules:
-- severity must be exactly one of: low, medium, high
-- precautions must have exactly 4 items
-- disease must be EXACTLY from the list above
-- NO text before or after the JSON`;
-
-  const response = await fetch(GEMINI_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 500,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Gemini error:", response.status, errorText);
-    throw new Error("AI service unavailable");
-  }
-
-  const data = await response.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!rawText) throw new Error("No response from AI");
-
-  const cleaned = rawText
-    .replace(/```json\s*/gi, "")
-    .replace(/```\s*/g, "")
-    .trim();
-
-  const parsed = JSON.parse(cleaned) as Diagnosis;
-
-  if (!parsed.disease || !parsed.description || !parsed.severity || !parsed.precautions) {
-    throw new Error("Invalid AI response format");
-  }
-
-  return parsed;
-}
-
 function UserDashboard() {
+  const diagnose = useServerFn(diagnoseSymptoms);
   const [history, setHistory] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -118,7 +61,7 @@ function UserDashboard() {
     setInput("");
     setLoading(true);
     try {
-      const data = await diagnoseWithGemini(text);
+      const data = await diagnose({ data: { sessionId: genId(), symptoms: text } });
       setHistory((h) => [...h, { id: genId(), role: "ai", data }]);
       toast.success("Assessment ready");
     } catch (err) {
