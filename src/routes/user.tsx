@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Send, Loader2, AlertTriangle, ShieldCheck, MessageSquare, Database } from "lucide-react";
-import { diagnoseSymptoms } from "@/lib/diagnose.client";
+import { diagnoseSymptoms } from "@/lib/diagnose.functions";
 
 export const Route = createFileRoute("/user")({
   head: () => ({
@@ -37,6 +38,7 @@ function genId() {
 }
 
 function UserDashboard() {
+  const diagnose = useServerFn(diagnoseSymptoms);
   const [history, setHistory] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,11 +62,12 @@ function UserDashboard() {
     setInput("");
     setLoading(true);
     try {
-      const data = await diagnoseSymptoms({ sessionId: genId(), symptoms: text });
+      const data = await diagnose({ data: { sessionId: genId(), symptoms: text } });
       setHistory((h) => [...h, { id: genId(), role: "ai", data }]);
       toast.success("Assessment ready");
     } catch (err) {
-      toast.error("Please try again");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
