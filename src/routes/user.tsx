@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Send, Loader2, AlertTriangle, ShieldCheck, MessageSquare } from "lucide-react";
+import { Send, Loader2, AlertTriangle, ShieldCheck, MessageSquare, Database } from "lucide-react";
 import { diagnoseSymptoms } from "@/lib/diagnose.functions";
 
 export const Route = createFileRoute("/user")({
@@ -20,6 +20,7 @@ type Diagnosis = {
   description: string;
   severity: "low" | "medium" | "high";
   precautions: string[];
+  source?: "kaggle" | "ai";
 };
 
 type ChatItem =
@@ -124,6 +125,10 @@ function UserDashboard() {
                     </span>
                   </div>
                   <p className="mt-3 text-sm text-foreground/80">{m.data.description}</p>
+                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary">
+                    <Database className="h-3 w-3" />
+                    Data source: {m.data.source === "kaggle" ? "Kaggle Medical Dataset" : "AI Fallback"}
+                  </div>
                   <div className="mt-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                       Recommended precautions
@@ -150,7 +155,7 @@ function UserDashboard() {
           {loading && (
             <div className="flex justify-start">
               <div className="rounded-2xl rounded-tl-sm border border-border bg-secondary/40 px-4 py-3 text-sm flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Analyzing symptoms…
+                <Loader2 className="h-4 w-4 animate-spin" /> Analyzing your symptoms against medical database...
               </div>
             </div>
           )}
