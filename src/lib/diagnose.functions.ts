@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  getDataset,
+  lookupDescription,
+  lookupPrecautions,
+  computeSeverity,
+} from "./dataset.server";
 const InputSchema = z.object({
   sessionId: z.string().min(1).max(64),
   symptoms: z.string().min(3).max(2000),
@@ -53,15 +59,43 @@ severity must be exactly: low, medium, or high. No other text outside the JSON.`
       severity: "low" | "medium" | "high";
       precautions: string[];
     };
+
+    // Merge with Kaggle dataset (CSV takes priority over AI for desc/precautions).
+    let source: "kaggle" | "ai" = "ai";
+    let description = parsed.description;
+    let precautions = parsed.precautions;
+    let severity = parsed.severity;
+    try {
+      const ds = await getDataset();
+      const csvDesc = lookupDescription(ds, parsed.disease);
+      const csvPrec = lookupPrecautions(ds, parsed.disease);
+      const sev = computeSeverity(ds, data.symptoms);
+      if (csvDesc) {
+        description = csvDesc;
+        source = "kaggle";
+      }
+      if (csvPrec && csvPrec.length) {
+        precautions = csvPrec;
+        source = "kaggle";
+      }
+      if (sev.matched.length > 0) {
+        severity = sev.level;
+      }
+    } catch (e) {
+      console.error("Dataset lookup failed, using AI fallback:", e);
+    }
+
+    const result = { disease: parsed.disease, description, severity, precautions, source };
+
     const { error } = await supabaseAdmin.from("diagnoses").insert({
       session_id: data.sessionId,
       symptoms: data.symptoms,
-      disease: parsed.disease,
-      description: parsed.description,
-      severity: parsed.severity,
-      precautions: parsed.precautions,
+      disease: result.disease,
+      description: result.description,
+      severity: result.severity,
+      precautions: result.precautions,
       age_group: data.ageGroup ?? null,
     });
     if (error) console.error("Insert diagnosis error:", error);
-    return parsed;
+    return result;
   });
