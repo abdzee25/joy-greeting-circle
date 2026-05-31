@@ -28,9 +28,9 @@ type ChatItem =
   | { id: string; role: "ai"; data: Diagnosis };
 
 const severityStyles: Record<Diagnosis["severity"], string> = {
-  low: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  medium: "bg-amber-100 text-amber-800 border-amber-200",
-  high: "bg-rose-100 text-rose-700 border-rose-200",
+  low: "bg-emerald-500/15 text-emerald-300 border-emerald-400/40 shadow-[0_0_18px_-4px_rgba(16,185,129,0.6)]",
+  medium: "bg-amber-500/15 text-amber-300 border-amber-400/40 shadow-[0_0_18px_-4px_rgba(245,158,11,0.6)]",
+  high: "bg-rose-500/15 text-rose-300 border-rose-400/40 shadow-[0_0_18px_-4px_rgba(244,63,94,0.7)]",
 };
 
 function genId() {
@@ -74,25 +74,25 @@ function UserDashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10 animate-fade-up">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+        <div className="inline-flex items-center gap-2 rounded-full glass-panel px-3 py-1 text-xs font-medium text-primary-glow">
           <ShieldCheck className="h-3.5 w-3.5" /> AI-Powered Triage
         </div>
-        <h1 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">
+        <h1 className="mt-3 text-3xl sm:text-5xl font-extrabold tracking-tight text-gradient">
           Your AI Health Companion
         </h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="mt-3 text-foreground/70">
           Describe your symptoms below. Get a preliminary assessment in seconds.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden">
+      <div className="glass-panel glow-border rounded-2xl overflow-hidden">
         <div ref={scrollRef} className="h-[480px] overflow-y-auto p-6 space-y-4">
           {history.length === 0 && !loading && (
-            <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
-              <MessageSquare className="h-10 w-10 mb-3 opacity-50" />
-              <p className="font-medium">Start your conversation</p>
+            <div className="flex h-full flex-col items-center justify-center text-center text-foreground/60">
+              <MessageSquare className="h-12 w-12 mb-3 text-primary-glow/70 animate-glow-pulse" />
+              <p className="font-medium text-foreground/80">Start your conversation</p>
               <p className="text-sm">
                 Try: "I have a sore throat, mild fever and headache for 2 days."
               </p>
@@ -101,20 +101,23 @@ function UserDashboard() {
 
           {history.map((m) =>
             m.role === "user" ? (
-              <div key={m.id} className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary px-4 py-3 text-sm text-primary-foreground shadow-sm">
+              <div key={m.id} className="flex justify-end animate-fade-up">
+                <div
+                  className="max-w-[80%] rounded-2xl rounded-tr-sm px-4 py-3 text-sm text-white shadow-[0_8px_24px_-8px_rgba(59,130,246,0.55)]"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
                   {m.text}
                 </div>
               </div>
             ) : (
-              <div key={m.id} className="flex justify-start">
-                <div className="max-w-[90%] w-full rounded-2xl rounded-tl-sm border border-border bg-secondary/40 p-5">
+              <div key={m.id} className="flex justify-start animate-fade-up">
+                <div className="max-w-[90%] w-full rounded-2xl rounded-tl-sm glass-panel p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      <p className="text-xs font-medium uppercase tracking-wider text-primary-glow/80">
                         Likely condition
                       </p>
-                      <h3 className="text-lg font-bold text-foreground mt-0.5">
+                      <h3 className="text-xl font-bold text-gradient mt-0.5">
                         {m.data.disease}
                       </h3>
                     </div>
@@ -124,22 +127,22 @@ function UserDashboard() {
                       {m.data.severity} severity
                     </span>
                   </div>
-                  <p className="mt-3 text-sm text-foreground/80">{m.data.description}</p>
-                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary">
+                  <p className="mt-3 text-sm text-foreground/85 leading-relaxed">{m.data.description}</p>
+                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary-glow">
                     <Database className="h-3 w-3" />
                     Data source: {m.data.source === "kaggle" ? "Kaggle Medical Dataset" : "AI Fallback"}
                   </div>
                   <div className="mt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-primary-glow/80 mb-2">
                       Recommended precautions
                     </p>
                     <ul className="grid sm:grid-cols-2 gap-2">
                       {m.data.precautions.map((p, i) => (
                         <li
                           key={i}
-                          className="flex items-start gap-2 rounded-lg bg-background border border-border px-3 py-2 text-sm"
+                          className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-sm text-foreground/90"
                         >
-                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: "var(--gradient-primary)" }}>
                             {i + 1}
                           </span>
                           <span>{p}</span>
@@ -153,8 +156,8 @@ function UserDashboard() {
           )}
 
           {loading && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl rounded-tl-sm border border-border bg-secondary/40 px-4 py-3 text-sm flex items-center gap-2 text-muted-foreground">
+            <div className="flex justify-start animate-fade-up">
+              <div className="rounded-2xl rounded-tl-sm glass-panel px-4 py-3 text-sm flex items-center gap-2 text-primary-glow">
                 <Loader2 className="h-4 w-4 animate-spin" /> Analyzing your symptoms against medical database...
               </div>
             </div>
@@ -163,19 +166,19 @@ function UserDashboard() {
 
         <form
           onSubmit={submit}
-          className="border-t border-border bg-background p-3 flex gap-2"
+          className="border-t border-primary/20 bg-[#0A1628]/60 backdrop-blur-xl p-3 flex gap-2"
         >
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={loading}
             placeholder="Describe your symptoms…"
-            className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+            className="flex-1 rounded-xl border border-primary/30 bg-[#0A1628]/70 text-foreground placeholder:text-foreground/40 px-4 py-3 text-sm outline-none focus:border-primary-glow focus:ring-2 focus:ring-primary/40 focus:shadow-[0_0_18px_-2px_rgba(96,165,250,0.6)] disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-card)] transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100"
+            className="btn-glow inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-60 disabled:hover:scale-100"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -187,7 +190,7 @@ function UserDashboard() {
         </form>
       </div>
 
-      <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 backdrop-blur p-4 text-sm text-amber-200">
         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
         <p>
           <strong>Disclaimer:</strong> This is not a substitute for professional
