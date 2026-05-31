@@ -20,35 +20,63 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div>
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden bg-hero-gradient">
+        {/* Animated radial glow */}
         <div
-          className="absolute inset-0 -z-10 opacity-90"
-          style={{ background: "var(--gradient-hero)" }}
+          className="absolute inset-0 -z-10 animate-gradient opacity-80"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(59,130,246,0.35), transparent 55%), radial-gradient(circle at 80% 80%, rgba(96,165,250,0.30), transparent 55%)",
+          }}
         />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.25),transparent_50%)]" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 text-primary-foreground">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur-sm">
+        {/* Grid pattern */}
+        <div className="absolute inset-0 -z-10 bg-grid opacity-60" />
+        {/* Floating particles */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          {[...Array(14)].map((_, i) => (
+            <span
+              key={i}
+              className="absolute h-1.5 w-1.5 rounded-full bg-primary-glow/70 animate-float"
+              style={{
+                left: `${(i * 7.3) % 100}%`,
+                top: `${(i * 11.7) % 90}%`,
+                animationDelay: `${(i % 6) * 0.7}s`,
+                animationDuration: `${6 + (i % 5)}s`,
+                boxShadow: "0 0 12px 2px rgba(96,165,250,0.7)",
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-24 sm:py-32 text-foreground relative">
+          <div className="max-w-3xl animate-fade-up">
+            <div className="inline-flex items-center gap-2 rounded-full glass-panel px-3 py-1 text-xs font-medium text-primary-glow">
               <ShieldCheck className="h-3.5 w-3.5" />
               Aligned with SDG 3 · Vision 2030
             </div>
-            <h1 className="mt-5 text-4xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
-              Your AI Health Companion
+            <div className="mt-6 flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl btn-glow animate-heartbeat">
+                <Activity className="h-8 w-8 text-white" />
+              </div>
+              <span className="text-sm uppercase tracking-[0.3em] text-primary-glow/80">HealthGuard AI</span>
+            </div>
+            <h1 className="mt-6 text-5xl sm:text-7xl font-extrabold tracking-tight leading-[1.02] text-gradient">
+              Your AI Health<br />Companion
             </h1>
-            <p className="mt-5 text-lg sm:text-xl text-white/90 max-w-2xl">
+            <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-2xl">
               Describe your symptoms and get an instant preliminary assessment, severity score, and
               precautions — backed by AI and built for everyone.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 to="/user"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-primary shadow-[var(--shadow-elegant)] transition-transform hover:scale-[1.02]"
+                className="btn-glow inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
               >
-                <Stethoscope className="h-4 w-4" /> Start Symptom Check
+                <Stethoscope className="h-4 w-4" /> Start Diagnosis
               </Link>
               <Link
                 to="/admin"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
+                className="glass-panel inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-sm font-semibold text-foreground transition-all hover:glow-border hover:text-primary-glow"
               >
                 <BarChart3 className="h-4 w-4" /> Admin Dashboard
               </Link>
@@ -57,7 +85,7 @@ function Index() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-20 relative">
         <div className="grid gap-6 md:grid-cols-3">
           {[
             {
@@ -85,14 +113,18 @@ function Index() {
             <Link
               key={f.title}
               to={f.to}
-              className="group rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)] transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]"
+              className="group glass-panel relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:glow-border"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <f.icon className="h-6 w-6" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-glow/70 to-transparent" />
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-xl text-white shadow-[var(--shadow-glow)]"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <f.icon className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-card-foreground">{f.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
-              <span className="mt-4 inline-flex text-sm font-medium text-primary group-hover:underline">
+              <h3 className="mt-5 text-lg font-semibold text-foreground">{f.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              <span className="mt-5 inline-flex text-sm font-medium text-primary-glow transition-transform group-hover:translate-x-1">
                 {f.label} →
               </span>
             </Link>
