@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { listDiagnoses } from "./diagnoses.functions";
 
 export type DiagnosisRow = {
   id: string;
@@ -13,11 +13,6 @@ export type DiagnosisRow = {
 };
 
 export async function fetchAllDiagnoses(): Promise<DiagnosisRow[]> {
-  const { data, error } = await supabase
-    .from("diagnoses")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  if (error) throw error;
-  return (data ?? []) as DiagnosisRow[];
+  const data = await listDiagnoses();
+  return data as DiagnosisRow[];
 }
